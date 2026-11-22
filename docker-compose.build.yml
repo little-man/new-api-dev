@@ -1,0 +1,17 @@
+# 二次开发构建覆盖文件：用本地源码构建镜像，替代官方的 calciumion/new-api 镜像。
+#
+# 用法（在仓库根目录执行）：
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+#
+# 建议同时指定镜像 tag（便于回滚），用 commit 短 SHA 作标识：
+#   NEW_API_IMAGE=new-api:$(git rev-parse --short HEAD) \
+#     docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+#
+# 只声明 image 与 build 两个字段。端口、数据卷、环境变量全部沿用
+# docker-compose.yml，避免卷列表被 compose 重复追加。
+services:
+  new-api:
+    image: ${NEW_API_IMAGE:-new-api:dev}
+    build:
+      context: .
+      dockerfile: Dockerfile

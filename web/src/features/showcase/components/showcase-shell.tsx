@@ -23,8 +23,9 @@ import { PublicLayout } from '@/components/layout'
 import type { TopNavLink } from '@/components/layout/types'
 import { useStatus } from '@/hooks/use-status'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
 
-import { SHOWCASE_NAV_LINKS } from '../lib/showcase-nav'
+import { SHOWCASE_NAV_LINKS, SHOWCASE_ROUTES } from '../lib/showcase-nav'
 import { ShowcaseBrandMark, SHOWCASE_BRAND_NAME } from './showcase-brand'
 import { ShowcaseFooter } from './showcase-footer'
 import { ShowcaseNavActions } from './showcase-nav-actions'
@@ -44,16 +45,28 @@ interface ShowcaseShellProps {
 export function ShowcaseShell({ children, className }: ShowcaseShellProps) {
   const { t } = useTranslation()
   const { status } = useStatus()
+  const isAuthenticated = !!useAuthStore((state) => state.auth.user)
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
 
   const docsLink = status?.docs_link as string | undefined
+  // The console entry leads to the real dashboard when signed in, and to the
+  // sign-in page (with a redirect back to the dashboard) when not. Every other
+  // entry stays a plain public route.
+  const consoleHref = isAuthenticated
+    ? '/dashboard'
+    : `/sign-in?redirect=${encodeURIComponent('/dashboard')}`
+  const baseLinks: TopNavLink[] = SHOWCASE_NAV_LINKS.map((link) =>
+    link.href === SHOWCASE_ROUTES.console
+      ? { ...link, href: consoleHref }
+      : link
+  )
   // The docs entry only exists when the operator published a documentation
   // site; a placeholder link would be a dead end for visitors.
   const links: TopNavLink[] = docsLink
-    ? [...SHOWCASE_NAV_LINKS, { title: 'Docs', href: docsLink, external: true }]
-    : SHOWCASE_NAV_LINKS
+    ? [...baseLinks, { title: 'Docs', href: docsLink, external: true }]
+    : baseLinks
 
   return (
     <PublicLayout

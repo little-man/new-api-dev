@@ -27,6 +27,7 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ShowcaseBrandMark } from '@/features/showcase/components/showcase-brand'
 import { SystemUpdateAction } from '@/features/system-update/system-update-action'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useSystemConfig } from '@/hooks/use-system-config'
@@ -36,7 +37,6 @@ import { useAuthStore } from '@/stores/auth-store'
 
 import { defaultTopNavLinks } from '../config/top-nav.config'
 import type { TopNavLink } from '../types'
-import { HeaderLogo } from './header-logo'
 
 const AUTH_PROMPT_SECONDS = 5
 
@@ -117,12 +117,7 @@ export function PublicHeader(props: PublicHeaderProps) {
   const [authPromptSecondsLeft, setAuthPromptSecondsLeft] =
     useState(AUTH_PROMPT_SECONDS)
   const { auth } = useAuthStore()
-  const {
-    systemName,
-    logo: systemLogo,
-    loading,
-    logoLoaded,
-  } = useSystemConfig()
+  const { systemName, loading } = useSystemConfig()
   const dynamicLinks = useTopNavLinks()
   const notifications = useNotifications()
   const routerState = useRouterState()
@@ -134,14 +129,9 @@ export function PublicHeader(props: PublicHeaderProps) {
   let links = navLinks
   if (!forceNavLinks && dynamicLinks.length > 0) links = dynamicLinks
 
-  let logoContent: ReactNode = (
-    <HeaderLogo
-      src={systemLogo}
-      loading={loading}
-      logoLoaded={logoLoaded}
-      className='size-full rounded-lg object-contain'
-    />
-  )
+  // Every public page shares the storefront brand mark so the logo stays
+  // consistent with the home page instead of the admin-configured image.
+  let logoContent: ReactNode = <ShowcaseBrandMark />
   if (customLogo) logoContent = customLogo
   if (loading) logoContent = <Skeleton className='size-full rounded-lg' />
 

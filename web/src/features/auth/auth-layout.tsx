@@ -17,9 +17,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Link } from '@tanstack/react-router'
-import { useTranslation } from 'react-i18next'
 
 import { Skeleton } from '@/components/ui/skeleton'
+import { ShowcaseBrandMark } from '@/features/showcase/components/showcase-brand'
 import { useSystemConfig } from '@/hooks/use-system-config'
 
 type AuthLayoutProps = {
@@ -27,8 +27,7 @@ type AuthLayoutProps = {
 }
 
 export function AuthLayout({ children }: AuthLayoutProps) {
-  const { t } = useTranslation()
-  const { systemName, logo, loading } = useSystemConfig()
+  const { systemName, loading } = useSystemConfig()
 
   return (
     <div className='relative grid h-svh max-w-none'>
@@ -38,13 +37,9 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       >
         <div className='relative h-8 w-8'>
           {loading ? (
-            <Skeleton className='absolute inset-0 rounded-full' />
+            <Skeleton className='absolute inset-0 rounded-lg' />
           ) : (
-            <img
-              src={logo}
-              alt={t('Logo')}
-              className='h-8 w-8 rounded-full object-cover'
-            />
+            <ShowcaseBrandMark className='size-8' />
           )}
         </div>
         {loading ? (

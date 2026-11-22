@@ -66,6 +66,7 @@ export function ShowcaseShell({ children, className }: ShowcaseShellProps) {
         forceNavLinks: true,
         mobileNavRow: true,
         showSystemUpdate: false,
+        compactOnScroll: false,
         beforeAuthContent: <ShowcaseNavActions />,
         signInLabel: t('Sign in / Sign up'),
       }}

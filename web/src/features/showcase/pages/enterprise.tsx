@@ -16,42 +16,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 
+import { EnterpriseLeadForm } from '../components/enterprise-lead-form'
 import { ShowcaseShell } from '../components/showcase-shell'
 
 export function ShowcaseEnterprise() {
   const { t } = useTranslation()
-  const formRef = useRef<HTMLFormElement>(null)
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    const data = new FormData(event.currentTarget)
-    const field = (key: string) => String(data.get(key) ?? '').trim()
-    // There is no lead/ticket endpoint behind this storefront, so instead of
-    // pretending a proposal was sent we hand the visitor a ready-to-send
-    // summary of their own input.
-    const summary = [
-      `${t('Company name')}: ${field('company')}`,
-      `${t('Contact name')}: ${field('name')}`,
-      `${t('Work email')}: ${field('email')}`,
-      `${t('Estimated monthly usage')}: ${field('volume') || '-'}`,
-      `${t('Requirements')}: ${field('need') || '-'}`,
-    ].join('\n')
-    try {
-      await navigator.clipboard.writeText(summary)
-      toast.success(
-        t(
-          'Requirement summary copied. Send it to our sales team — no ticket system is connected to this form yet.'
-        )
-      )
-      formRef.current?.reset()
-    } catch {
-      toast.error(t('Copy failed, please copy manually'))
-    }
-  }
 
   const cards = [
     {
@@ -144,90 +115,7 @@ export function ShowcaseEnterprise() {
             </p>
           </div>
 
-          <form
-            ref={formRef}
-            onSubmit={handleSubmit}
-            className='rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900'
-          >
-            <h2 className='text-lg font-bold text-slate-900 dark:text-slate-100'>
-              {t('Talk to us')}
-            </h2>
-
-            <div className='mt-4 grid gap-3 sm:grid-cols-2'>
-              <label className='block'>
-                <span className='mb-1 block text-[11.5px] font-medium text-slate-500 dark:text-slate-400'>
-                  {t('Company name')} *
-                </span>
-                <input
-                  required
-                  name='company'
-                  autoComplete='organization'
-                  className='h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-100'
-                />
-              </label>
-              <label className='block'>
-                <span className='mb-1 block text-[11.5px] font-medium text-slate-500 dark:text-slate-400'>
-                  {t('Contact name')} *
-                </span>
-                <input
-                  required
-                  name='name'
-                  autoComplete='name'
-                  className='h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-100'
-                />
-              </label>
-              <label className='block'>
-                <span className='mb-1 block text-[11.5px] font-medium text-slate-500 dark:text-slate-400'>
-                  {t('Work email')} *
-                </span>
-                <input
-                  required
-                  type='email'
-                  name='email'
-                  autoComplete='email'
-                  className='h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-100'
-                />
-              </label>
-              <label className='block'>
-                <span className='mb-1 block text-[11.5px] font-medium text-slate-500 dark:text-slate-400'>
-                  {t('Estimated monthly usage')}
-                </span>
-                <input
-                  name='volume'
-                  placeholder={t('e.g. 50M tokens per month')}
-                  className='h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-100'
-                />
-              </label>
-            </div>
-
-            <label className='mt-3 block'>
-              <span className='mb-1 block text-[11.5px] font-medium text-slate-500 dark:text-slate-400'>
-                {t('Requirements')}
-              </span>
-              <textarea
-                name='need'
-                rows={4}
-                placeholder={t(
-                  'Settlement terms, invoice type, whether an SLA is required, etc.'
-                )}
-                className='w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-100'
-              />
-            </label>
-
-            <div className='mt-4 flex flex-wrap items-center gap-3'>
-              <button
-                type='submit'
-                className='inline-flex h-9 items-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700'
-              >
-                {t('Copy requirement summary')}
-              </button>
-              <p className='text-[11px] text-slate-400'>
-                {t(
-                  'Your input is only formatted and copied locally; nothing is uploaded to a server.'
-                )}
-              </p>
-            </div>
-          </form>
+          <EnterpriseLeadForm />
         </div>
       </div>
     </ShowcaseShell>

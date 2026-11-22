@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import {
   Activity,
   Box,
+  Building2,
   ClipboardList,
   CreditCard,
   FileText,
@@ -157,6 +158,11 @@ export function useSidebarData(badges: SidebarBadges = {}): SidebarData {
             title: t('Subscriptions'),
             url: '/subscriptions',
             icon: CreditCard,
+          },
+          {
+            title: t('Enterprise Leads'),
+            url: '/enterprise-leads',
+            icon: Building2,
           },
           {
             title: t('System Info'),

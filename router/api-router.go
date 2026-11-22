@@ -35,6 +35,9 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.GET("/about", controller.GetAbout)
 		//apiRouter.GET("/midjourney", controller.GetMidjourney)
 		apiRouter.GET("/home_page_content", controller.GetHomePageContent)
+		// Public "contact sales" form of the storefront. Visitors are usually not
+		// signed in yet, so the handler enforces its own per-address limit.
+		apiRouter.POST("/enterprise/lead", middleware.CriticalRateLimit(), anonymousRequestBodyLimit, controller.SubmitEnterpriseLead)
 		apiRouter.GET("/pricing", middleware.DisableCache(), middleware.HeaderNavModuleAuth("pricing"), controller.GetPricing)
 		perfMetricsRoute := apiRouter.Group("/perf-metrics")
 		perfMetricsRoute.Use(middleware.DisableCache(), middleware.HeaderNavModulePublicOrUserAuth("pricing"))
@@ -209,6 +212,15 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.GET("/subscription/epay/notify", controller.SubscriptionEpayNotify)
 		apiRouter.GET("/subscription/epay/return", controller.SubscriptionEpayReturn)
 		apiRouter.POST("/subscription/epay/return", anonymousRequestBodyLimit, controller.SubscriptionEpayReturn)
+		// Enterprise leads collected by the storefront contact form.
+		enterpriseLeadRoute := apiRouter.Group("/enterprise/lead")
+		enterpriseLeadRoute.Use(middleware.AdminAuth())
+		{
+			enterpriseLeadRoute.GET("", controller.GetAllEnterpriseLeads)
+			enterpriseLeadRoute.PUT("/:id", controller.UpdateEnterpriseLead)
+			enterpriseLeadRoute.DELETE("/:id", controller.DeleteEnterpriseLead)
+		}
+
 		optionRoute := apiRouter.Group("/option")
 		optionRoute.Use(middleware.RootAuth())
 		{

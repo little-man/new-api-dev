@@ -81,6 +81,12 @@ export interface PublicHeaderProps {
    * small screens instead.
    */
   mobileNavRow?: boolean
+  /**
+   * Shrink the header into a narrow floating pill on scroll. Disable it when
+   * the navigation plus extra actions do not fit inside that pill, which would
+   * otherwise truncate every link to an ellipsis.
+   */
+  compactOnScroll?: boolean
   className?: string
 }
 
@@ -92,6 +98,7 @@ export function PublicHeader(props: PublicHeaderProps) {
     signInLabel,
     showSystemUpdate = true,
     mobileNavRow = false,
+    compactOnScroll = true,
     showThemeSwitch = true,
     showLanguageSwitcher = true,
     logo: customLogo,
@@ -225,21 +232,40 @@ export function PublicHeader(props: PublicHeaderProps) {
     [t]
   )
 
+  // Once scrolled the header turns into a floating pill. The pill is narrow
+  // on purpose, so pages whose navigation does not fit keep a full-width bar
+  // instead; its height stays the same so any sticky row below does not jump.
+  let wrapperLayout = 'max-w-7xl px-4 pt-0 md:px-6'
+  let navLayout = 'h-16 px-2'
+  let headerChrome = ''
+  if (scrolled && compactOnScroll) {
+    wrapperLayout = 'max-w-[52rem] px-3 pt-3'
+    navLayout =
+      'bg-background/60 ring-border/50 h-12 rounded-2xl pr-1.5 pl-4 shadow-[0_2px_16px_-6px_rgba(0,0,0,0.08),0_0_0_0.5px_rgba(0,0,0,0.02)] ring-[0.5px] backdrop-blur-2xl dark:shadow-[0_2px_16px_-6px_rgba(0,0,0,0.4)]'
+  } else if (scrolled) {
+    // Full-width bar: the tint lives on the fixed header so it spans the whole
+    // viewport while the nav itself stays aligned with the page content.
+    headerChrome = 'bg-background/85 border-border/50 border-b backdrop-blur-xl'
+  }
+
   return (
     <>
-      <header className='pointer-events-none fixed inset-x-0 top-0 z-50'>
+      <header
+        className={cn(
+          'pointer-events-none fixed inset-x-0 top-0 z-50',
+          headerChrome
+        )}
+      >
         <div
           className={cn(
             'pointer-events-auto mx-auto transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
-            scrolled ? 'max-w-[52rem] px-3 pt-3' : 'max-w-7xl px-4 pt-0 md:px-6'
+            wrapperLayout
           )}
         >
           <nav
             className={cn(
               'flex items-center justify-between gap-2 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
-              scrolled
-                ? 'bg-background/60 ring-border/50 h-12 rounded-2xl pr-1.5 pl-4 shadow-[0_2px_16px_-6px_rgba(0,0,0,0.08),0_0_0_0.5px_rgba(0,0,0,0.02)] ring-[0.5px] backdrop-blur-2xl dark:shadow-[0_2px_16px_-6px_rgba(0,0,0,0.4)]'
-                : 'h-16 px-2'
+              navLayout
             )}
           >
             {/* Logo */}

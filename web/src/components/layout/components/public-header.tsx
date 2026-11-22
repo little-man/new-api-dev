@@ -59,12 +59,39 @@ export interface PublicHeaderProps {
   showNavigation?: boolean
   showAuthButtons?: boolean
   showNotifications?: boolean
+  /**
+   * Ignore the backend-configured top navigation links and always render the
+   * provided `navLinks`. Used by the public showcase pages, whose navigation
+   * is part of the product surface rather than an admin-configurable list.
+   */
+  forceNavLinks?: boolean
+  /**
+   * Extra actions rendered ahead of the language switcher on desktop and in
+   * the compact mobile action row. The showcase pages use this for the API
+   * status pill and the top-up button.
+   */
+  beforeAuthContent?: React.ReactNode
+  /** Label of the signed-out auth button. Defaults to `Sign in`. */
+  signInLabel?: string
+  /** Show the self-hosted version badge next to the brand. */
+  showSystemUpdate?: boolean
+  /**
+   * The caller renders its own mobile navigation row: hide the hamburger and
+   * the full-screen menu, and keep a compact sign-in button reachable on
+   * small screens instead.
+   */
+  mobileNavRow?: boolean
   className?: string
 }
 
 export function PublicHeader(props: PublicHeaderProps) {
   const {
     navLinks = defaultTopNavLinks,
+    forceNavLinks = false,
+    beforeAuthContent,
+    signInLabel,
+    showSystemUpdate = true,
+    mobileNavRow = false,
     showThemeSwitch = true,
     showLanguageSwitcher = true,
     logo: customLogo,
@@ -97,7 +124,8 @@ export function PublicHeader(props: PublicHeaderProps) {
   const user = auth.user
   const isAuthenticated = !!user
   const displaySiteName = customSiteName || systemName
-  const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
+  let links = navLinks
+  if (!forceNavLinks && dynamicLinks.length > 0) links = dynamicLinks
 
   let logoContent: ReactNode = (
     <HeaderLogo
@@ -116,7 +144,7 @@ export function PublicHeader(props: PublicHeaderProps) {
       className='h-8 rounded-lg px-3.5 text-xs font-medium'
       render={<Link to='/sign-in' />}
     >
-      {t('Sign in')}
+      {signInLabel ?? t('Sign in')}
     </Button>
   )
   if (isAuthenticated) authContent = <ProfileDropdown />
@@ -234,7 +262,9 @@ export function PublicHeader(props: PublicHeaderProps) {
                   )}
                 </span>
               </Link>
-              <SystemUpdateAction presentation='version' />
+              {showSystemUpdate && (
+                <SystemUpdateAction presentation='version' />
+              )}
             </div>
 
             {/* Desktop nav */}
@@ -281,6 +311,8 @@ export function PublicHeader(props: PublicHeaderProps) {
                 )
               })}
 
+              {beforeAuthContent}
+
               {(showLanguageSwitcher ||
                 showThemeSwitch ||
                 showNotifications) && (
@@ -312,121 +344,138 @@ export function PublicHeader(props: PublicHeaderProps) {
 
             {/* Mobile: compact actions + hamburger */}
             <div className='flex shrink-0 items-center gap-2 lg:hidden'>
+              {beforeAuthContent}
               {showThemeSwitch && <ThemeSwitch />}
               {showAuthButtons && !loading && isAuthenticated && (
                 <ProfileDropdown />
               )}
-              <Button
-                type='button'
-                variant='ghost'
-                size='icon'
-                className='size-9'
-                onClick={() => setMobileOpen((v) => !v)}
-                aria-label={t('Toggle navigation menu')}
-              >
-                <div className='relative size-4'>
-                  <span
-                    className={cn(
-                      'absolute inset-x-0 block h-[1.5px] origin-center rounded-full bg-current transition-all duration-300',
-                      mobileOpen ? 'top-[7px] rotate-45' : 'top-[3px]'
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      'absolute inset-x-0 top-[7px] block h-[1.5px] rounded-full bg-current transition-all duration-300',
-                      mobileOpen ? 'scale-x-0 opacity-0' : 'opacity-100'
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      'absolute inset-x-0 block h-[1.5px] origin-center rounded-full bg-current transition-all duration-300',
-                      mobileOpen ? 'top-[7px] -rotate-45' : 'top-[11px]'
-                    )}
-                  />
-                </div>
-              </Button>
+              {showAuthButtons &&
+                !loading &&
+                !isAuthenticated &&
+                mobileNavRow && (
+                  <Button
+                    size='sm'
+                    className='h-8 rounded-lg px-3 text-xs font-medium'
+                    render={<Link to='/sign-in' />}
+                  >
+                    {signInLabel ?? t('Sign in')}
+                  </Button>
+                )}
+              {!mobileNavRow && (
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='icon'
+                  className='size-9'
+                  onClick={() => setMobileOpen((v) => !v)}
+                  aria-label={t('Toggle navigation menu')}
+                >
+                  <div className='relative size-4'>
+                    <span
+                      className={cn(
+                        'absolute inset-x-0 block h-[1.5px] origin-center rounded-full bg-current transition-all duration-300',
+                        mobileOpen ? 'top-[7px] rotate-45' : 'top-[3px]'
+                      )}
+                    />
+                    <span
+                      className={cn(
+                        'absolute inset-x-0 top-[7px] block h-[1.5px] rounded-full bg-current transition-all duration-300',
+                        mobileOpen ? 'scale-x-0 opacity-0' : 'opacity-100'
+                      )}
+                    />
+                    <span
+                      className={cn(
+                        'absolute inset-x-0 block h-[1.5px] origin-center rounded-full bg-current transition-all duration-300',
+                        mobileOpen ? 'top-[7px] -rotate-45' : 'top-[11px]'
+                      )}
+                    />
+                  </div>
+                </Button>
+              )}
             </div>
           </nav>
         </div>
       </header>
 
       {/* Mobile full-screen overlay */}
-      <div
-        className={cn(
-          'bg-background/98 fixed inset-0 z-40 backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] lg:pointer-events-none lg:hidden',
-          mobileOpen
-            ? 'pointer-events-auto opacity-100'
-            : 'pointer-events-none opacity-0'
-        )}
-      >
-        <div className='flex h-full flex-col justify-between px-8 pt-20 pb-10'>
-          <nav className='flex flex-col gap-1'>
-            {links.map((link, i) => {
-              const isActive = pathname === link.href
-              const linkClassName = cn(
-                'flex items-center gap-3 py-3 text-base font-medium tracking-tight transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
-                mobileOpen
-                  ? 'translate-y-0 opacity-100'
-                  : 'translate-y-4 opacity-0',
-                isActive ? 'text-foreground' : 'text-muted-foreground',
-                link.disabled && 'pointer-events-none opacity-50'
-              )
-              const transitionStyle = {
-                transitionDelay: mobileOpen ? `${100 + i * 50}ms` : '0ms',
-              }
-              if (link.external) {
+      {!mobileNavRow && (
+        <div
+          className={cn(
+            'bg-background/98 fixed inset-0 z-40 backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] lg:pointer-events-none lg:hidden',
+            mobileOpen
+              ? 'pointer-events-auto opacity-100'
+              : 'pointer-events-none opacity-0'
+          )}
+        >
+          <div className='flex h-full flex-col justify-between px-8 pt-20 pb-10'>
+            <nav className='flex flex-col gap-1'>
+              {links.map((link, i) => {
+                const isActive = pathname === link.href
+                const linkClassName = cn(
+                  'flex items-center gap-3 py-3 text-base font-medium tracking-tight transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
+                  mobileOpen
+                    ? 'translate-y-0 opacity-100'
+                    : 'translate-y-4 opacity-0',
+                  isActive ? 'text-foreground' : 'text-muted-foreground',
+                  link.disabled && 'pointer-events-none opacity-50'
+                )
+                const transitionStyle = {
+                  transitionDelay: mobileOpen ? `${100 + i * 50}ms` : '0ms',
+                }
+                if (link.external) {
+                  return (
+                    <a
+                      key={`${link.title}:${link.href}`}
+                      href={link.href}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      aria-disabled={link.disabled}
+                      tabIndex={link.disabled ? -1 : undefined}
+                      onClick={(event) => handleNavLinkClick(event, link, true)}
+                      className={linkClassName}
+                      style={transitionStyle}
+                    >
+                      {t(link.title)}
+                    </a>
+                  )
+                }
                 return (
-                  <a
+                  <Link
                     key={`${link.title}:${link.href}`}
-                    href={link.href}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    aria-disabled={link.disabled}
-                    tabIndex={link.disabled ? -1 : undefined}
+                    to={link.href}
+                    disabled={link.disabled}
                     onClick={(event) => handleNavLinkClick(event, link, true)}
                     className={linkClassName}
                     style={transitionStyle}
                   >
                     {t(link.title)}
-                  </a>
+                  </Link>
                 )
-              }
-              return (
-                <Link
-                  key={`${link.title}:${link.href}`}
-                  to={link.href}
-                  disabled={link.disabled}
-                  onClick={(event) => handleNavLinkClick(event, link, true)}
-                  className={linkClassName}
-                  style={transitionStyle}
-                >
-                  {t(link.title)}
-                </Link>
-              )
-            })}
-          </nav>
+              })}
+            </nav>
 
-          <div
-            className={cn(
-              'flex flex-col gap-3 transition-all duration-500',
-              mobileOpen
-                ? 'translate-y-0 opacity-100'
-                : 'translate-y-4 opacity-0'
-            )}
-            style={{ transitionDelay: mobileOpen ? '250ms' : '0ms' }}
-          >
-            {showAuthButtons && (
-              <Link
-                to={isAuthenticated ? '/dashboard' : '/sign-in'}
-                onClick={() => setMobileOpen(false)}
-                className='bg-foreground text-background inline-flex h-10 items-center justify-center rounded-lg text-sm font-medium transition-opacity hover:opacity-90 active:opacity-80'
-              >
-                {isAuthenticated ? t('Go to Dashboard') : t('Sign in')}
-              </Link>
-            )}
+            <div
+              className={cn(
+                'flex flex-col gap-3 transition-all duration-500',
+                mobileOpen
+                  ? 'translate-y-0 opacity-100'
+                  : 'translate-y-4 opacity-0'
+              )}
+              style={{ transitionDelay: mobileOpen ? '250ms' : '0ms' }}
+            >
+              {showAuthButtons && (
+                <Link
+                  to={isAuthenticated ? '/dashboard' : '/sign-in'}
+                  onClick={() => setMobileOpen(false)}
+                  className='bg-foreground text-background inline-flex h-10 items-center justify-center rounded-lg text-sm font-medium transition-opacity hover:opacity-90 active:opacity-80'
+                >
+                  {isAuthenticated ? t('Go to Dashboard') : t('Sign in')}
+                </Link>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <Dialog
         open={!!authPromptTarget}

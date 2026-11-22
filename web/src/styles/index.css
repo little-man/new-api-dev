@@ -98,6 +98,39 @@ For commercial licensing, please contact support@quantumnous.com
   .json-code-editor-highlight .yace-tok--com {
     color: var(--muted-foreground);
   }
+
+  /* Public showcase: hero orbit rotation and gradient headline sweep. */
+  .showcase-orbit-spin {
+    transform-origin: 50% 50%;
+    animation: showcase-spin 70s linear infinite;
+  }
+
+  .showcase-sheen {
+    animation: showcase-sheen 9s ease-in-out infinite;
+  }
+
+  @keyframes showcase-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes showcase-sheen {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .showcase-orbit-spin,
+    .showcase-sheen {
+      animation: none;
+    }
+  }
 }
 
 @layer base {

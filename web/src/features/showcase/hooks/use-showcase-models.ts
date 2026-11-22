@@ -40,6 +40,8 @@ export type ShowcaseModel = {
   initials: string
   tone: string
   kind: ModelKind
+  /** Endpoint types reported by `/api/pricing`; empty when the backend omits them. */
+  endpointTypes: string[]
   description?: string
   tags: string[]
   perRequest: boolean
@@ -87,6 +89,7 @@ function toShowcaseModel(
     initials: modelInitials(name),
     tone: avatarTone(name),
     kind: modelKind(model),
+    endpointTypes: model.supported_endpoint_types ?? [],
     description: model.description,
     tags: parseTags(model.tags),
     perRequest: model.quota_type === 1,

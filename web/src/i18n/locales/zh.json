@@ -7982,6 +7982,12 @@
     "Invalid lead status": "线索状态无效",
     "Lead not found": "线索不存在",
     "Invalid lead id": "线索 ID 无效",
-    "Too many submissions from this address. Please try again later.": "提交过于频繁，请稍后再试。"
+    "Too many submissions from this address. Please try again later.": "提交过于频繁，请稍后再试。",
+    "Call {{model}} from your app: copy the endpoint, add your API key, and send the first request.": "把 {{model}} 接入你的应用：复制接口地址，填入 API Key，发出第一个请求。",
+    "Sign in to create and copy an API key.": "登录后即可创建并复制 API Key。",
+    "Copy full key": "复制完整密钥",
+    "Sign in to get a key": "登录获取密钥",
+    "This model is served through a dedicated endpoint. Copy the base URL and model name, then follow the request format in the console.": "该模型使用专用端点。请复制 API 地址和模型名，并按控制台中的请求格式调用。",
+    "Chat completions": "对话补全"
   }
 }

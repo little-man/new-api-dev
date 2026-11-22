@@ -7982,6 +7982,12 @@
     "Invalid lead status": "Invalid lead status",
     "Lead not found": "Lead not found",
     "Invalid lead id": "Invalid lead id",
-    "Too many submissions from this address. Please try again later.": "Too many submissions from this address. Please try again later."
+    "Too many submissions from this address. Please try again later.": "Too many submissions from this address. Please try again later.",
+    "Call {{model}} from your app: copy the endpoint, add your API key, and send the first request.": "Call {{model}} from your app: copy the endpoint, add your API key, and send the first request.",
+    "Sign in to create and copy an API key.": "Sign in to create and copy an API key.",
+    "Copy full key": "Copy full key",
+    "Sign in to get a key": "Sign in to get a key",
+    "This model is served through a dedicated endpoint. Copy the base URL and model name, then follow the request format in the console.": "This model is served through a dedicated endpoint. Copy the base URL and model name, then follow the request format in the console.",
+    "Chat completions": "Chat completions"
   }
 }

@@ -19,10 +19,10 @@ For commercial licensing, please contact support@quantumnous.com
 import { Link } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 
 import { cn } from '@/lib/utils'
 
+import { QuickstartDialog } from '../components/quickstart-dialog'
 import { ShowcaseShell } from '../components/showcase-shell'
 import {
   useShowcaseModels,
@@ -111,20 +111,16 @@ function PriceRow({
   )
 }
 
-function ModelCard({ model }: { model: ShowcaseModel }) {
+function ModelCard({
+  model,
+  onQuickstart,
+}: {
+  model: ShowcaseModel
+  onQuickstart: (model: ShowcaseModel) => void
+}) {
   const { t } = useTranslation()
   const unit = model.perRequest ? t('/call') : '/M'
   const kindLabel = t(MODEL_KIND_LABELS[model.kind] ?? 'Text')
-
-  const copySnippet = async () => {
-    const snippet = JSON.stringify({ model: model.name }, null, 2)
-    try {
-      await navigator.clipboard.writeText(snippet)
-      toast.success(t('Model id copied'))
-    } catch {
-      toast.error(t('Copy failed, please copy manually'))
-    }
-  }
 
   return (
     <article className='flex flex-col rounded-xl border border-slate-200 bg-white p-4 transition-shadow hover:shadow-[0_10px_30px_-16px_rgba(15,23,42,0.25)] dark:border-slate-800 dark:bg-slate-900'>
@@ -195,7 +191,7 @@ function ModelCard({ model }: { model: ShowcaseModel }) {
         </Link>
         <button
           type='button'
-          onClick={copySnippet}
+          onClick={() => onQuickstart(model)}
           className='inline-flex h-8 flex-1 items-center justify-center rounded-lg bg-blue-600 px-2 text-xs font-semibold whitespace-nowrap text-white transition hover:bg-blue-700'
         >
           {t('Quick start')}
@@ -217,6 +213,15 @@ export function ShowcaseMarket() {
   const [visible, setVisible] = useState(PAGE_SIZE)
   const [showAllVendors, setShowAllVendors] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [quickstartModel, setQuickstartModel] = useState<ShowcaseModel | null>(
+    null
+  )
+  const [quickstartOpen, setQuickstartOpen] = useState(false)
+
+  const openQuickstart = (model: ShowcaseModel) => {
+    setQuickstartModel(model)
+    setQuickstartOpen(true)
+  }
 
   const vendors = useMemo(() => {
     const seen = new Set<string>()
@@ -496,7 +501,11 @@ export function ShowcaseMarket() {
             <>
               <div className='grid gap-3 sm:grid-cols-2'>
                 {shown.map((model) => (
-                  <ModelCard key={model.id} model={model} />
+                  <ModelCard
+                    key={model.id}
+                    model={model}
+                    onQuickstart={openQuickstart}
+                  />
                 ))}
               </div>
               {visible < filtered.length && (
@@ -514,6 +523,12 @@ export function ShowcaseMarket() {
           )}
         </section>
       </div>
+
+      <QuickstartDialog
+        model={quickstartModel}
+        open={quickstartOpen}
+        onOpenChange={setQuickstartOpen}
+      />
     </ShowcaseShell>
   )
 }

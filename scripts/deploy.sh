@@ -15,6 +15,7 @@
 #   ./scripts/deploy.sh --build             # 本机构建（需 4 GB 以上内存，仅调试用）
 #   ./scripts/deploy.sh --skip-backup       # 跳过备份（不推荐）
 #   ./scripts/deploy.sh --skip-git-pull     # 只用本地代码，不拉 git
+#   ./scripts/deploy.sh --skip-comments     # 不重放表/字段注释（见 REPLAY_COMMENTS）
 #
 # 环境变量：
 #   BRANCH=dev             部署分支
@@ -33,6 +34,9 @@
 #   DB_NAME=new-api        数据库名
 #   DB_PASS=               仅 MySQL 备份需要
 #   HEALTH_TIMEOUT=90      健康检查最长等待秒数
+#   REPLAY_COMMENTS=1      健康检查通过后重放表/字段注释。GORM AutoMigrate 用 struct 定义
+#                          覆盖列定义，会把 COLUMN COMMENT 清空，所以每次部署都要补一次
+#   COMMENTS_SQL=scripts/sql/new_api_comments.sql   注释 SQL 文件路径
 #
 set -euo pipefail
 
@@ -55,11 +59,14 @@ NEW_API_IMAGE="${NEW_API_IMAGE:-}"
 
 DO_BACKUP=1
 DO_GIT_PULL=1
+REPLAY_COMMENTS=1
+COMMENTS_SQL="${COMMENTS_SQL:-scripts/sql/new_api_comments.sql}"
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --skip-backup)                DO_BACKUP=0; shift ;;
     --skip-pull|--skip-git-pull)  DO_GIT_PULL=0; shift ;;
+    --skip-comments)              REPLAY_COMMENTS=0; shift ;;
     --build)                      MODE=build; shift ;;
     --pull|--no-build)            MODE=pull; shift ;;
     --tag)                        IMAGE_TAG="${2:?--tag 需要一个值}"; shift 2 ;;
@@ -193,7 +200,67 @@ health_check() {
   return 1
 }
 
+# 注释重放：GORM AutoMigrate 在启动时用 struct 定义覆盖列定义，information_schema
+# 里的 COLUMN COMMENT 会被清空（struct 上没有 comment tag），所以每次重启后都要补。
+# 健康检查通过时全部迁移已完成，此时重放才不会被覆盖。
+# 失败只告警，不影响部署结果。
+replay_column_comments() {
+  if [ ! -f "$COMMENTS_SQL" ]; then
+    warn "找不到注释 SQL（$COMMENTS_SQL），跳过注释重放"
+    return 0
+  fi
+
+  local dsn="${SQL_DSN:-}"
+  if [ -z "$dsn" ]; then
+    # docker compose config 会把 environment 规范化成 map 或 list 两种形式，都试一遍
+    dsn="$("${COMPOSE[@]}" config 2>/dev/null \
+      | sed -n -e 's/^ *SQL_DSN: *//p' -e 's/^ *- SQL_DSN=//p' \
+      | head -n1 | sed -e 's/^"//' -e 's/"$//')"
+  fi
+  case "$dsn" in
+    *'@tcp('*) ;;
+    *) info "当前 DSN 不是 MySQL（${dsn:-未配置}），跳过注释重放"; return 0 ;;
+  esac
+
+  local user pass host port
+  user="$(printf '%s' "$dsn" | sed -n 's/^\([^:]*\):.*@tcp.*/\1/p')"
+  pass="$(printf '%s' "$dsn" | sed -n 's/^[^:]*:\([^@]*\)@tcp.*/\1/p')"
+  host="$(printf '%s' "$dsn" | sed -n 's/.*@tcp(\([^:)]*\):[0-9]*).*/\1/p')"
+  port="$(printf '%s' "$dsn" | sed -n 's/.*@tcp([^:)]*:\([0-9]*\)).*/\1/p')"
+  if [ -z "$host" ]; then
+    warn '无法从 SQL_DSN 解析数据库地址，跳过注释重放'
+    return 0
+  fi
+  port="${port:-3306}"
+
+  # --password= 形式可传空密码，且不会触发交互式密码输入
+  local mysql_args=(-h"$host" -P"$port" -u"$user" "--password=${pass}")
+
+  info "重放表/字段注释 -> ${host}:${port}"
+  if command -v mysql >/dev/null 2>&1; then
+    if mysql "${mysql_args[@]}" < "$COMMENTS_SQL"; then
+      info '注释重放完成'
+    else
+      warn '注释重放失败（服务不受影响），可稍后手动执行'
+    fi
+    return 0
+  fi
+  if "${COMPOSE[@]}" ps --services --status running 2>/dev/null | grep -qx 'mysql'; then
+    if "${COMPOSE[@]}" exec -T mysql mysql "${mysql_args[@]}" < "$COMMENTS_SQL"; then
+      info '注释重放完成'
+    else
+      warn '注释重放失败（服务不受影响），可稍后手动执行'
+    fi
+    return 0
+  fi
+  warn "宿主机没有 mysql 客户端、也没有运行中的 mysql 服务，跳过注释重放（可手动：mysql -h<host> -u<user> -p < $COMMENTS_SQL）"
+  return 0
+}
+
 if health_check; then
+  if [ "$REPLAY_COMMENTS" -eq 1 ]; then
+    replay_column_comments || warn '注释重放步骤异常，已忽略'
+  fi
   info "部署成功（分支 $BRANCH @ $(git rev-parse --short HEAD)）"
   echo "    提交: $COMMIT_MSG"
   if command -v curl >/dev/null 2>&1; then

@@ -48,6 +48,12 @@ func init() {
 
 // syncToCommon 将配置同步到 common 包
 func syncToCommon() {
+	cpuThreshold := common.GetEnvOrDefault("PERFORMANCE_MONITOR_CPU_THRESHOLD", performanceSetting.MonitorCPUThreshold)
+	if cpuThreshold < 0 || cpuThreshold > 100 {
+		common.SysError(common.LogText("PERFORMANCE_MONITOR_CPU_THRESHOLD must be between 0 and 100; using configured value: %d", performanceSetting.MonitorCPUThreshold))
+		cpuThreshold = performanceSetting.MonitorCPUThreshold
+	}
+
 	common.SetDiskCacheConfig(common.DiskCacheConfig{
 		Enabled:     performanceSetting.DiskCacheEnabled,
 		ThresholdMB: performanceSetting.DiskCacheThresholdMB,
@@ -57,7 +63,7 @@ func syncToCommon() {
 
 	common.SetPerformanceMonitorConfig(common.PerformanceMonitorConfig{
 		Enabled:         performanceSetting.MonitorEnabled,
-		CPUThreshold:    performanceSetting.MonitorCPUThreshold,
+		CPUThreshold:    cpuThreshold,
 		MemoryThreshold: performanceSetting.MonitorMemoryThreshold,
 		DiskThreshold:   performanceSetting.MonitorDiskThreshold,
 	})

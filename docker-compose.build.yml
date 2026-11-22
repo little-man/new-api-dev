@@ -1,14 +1,18 @@
-# 二次开发构建覆盖文件：用本地源码构建镜像，替代官方的 calciumion/new-api 镜像。
+# 镜像覆盖文件：把官方 calciumion/new-api 镜像替换成自己的构建产物。
 #
-# 用法（在仓库根目录执行）：
-#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+# 两种用法（都在仓库根目录执行）：
 #
-# 建议同时指定镜像 tag（便于回滚），用 commit 短 SHA 作标识：
-#   NEW_API_IMAGE=new-api:$(git rev-parse --short HEAD) \
-#     docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+#   1) 从 ACR 拉取（生产默认，2 GiB 机器唯一可行方式）：
+#      NEW_API_IMAGE=crpi-xxxx-vpc.cn-guangzhou.personal.cr.aliyuncs.com/<命名空间>/new-api:<短SHA> \
+#        docker compose -f docker-compose.yml -f docker-compose.build.yml up -d
 #
-# 只声明 image 与 build 两个字段。端口、数据卷、环境变量全部沿用
+#   2) 本地源码构建（需 4 GB 以上内存，仅调试用）：
+#      NEW_API_IMAGE=new-api:$(git rev-parse --short HEAD) \
+#        docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+#
+# 只声明 image 与 build 两个字段：端口、数据卷、环境变量全部沿用
 # docker-compose.yml，避免卷列表被 compose 重复追加。
+# 镜像已存在时 `up -d` 不会触发构建，所以用法 1 不会意外编译。
 services:
   new-api:
     image: ${NEW_API_IMAGE:-new-api:dev}

@@ -1,0 +1,94 @@
+# 构建多阶段镜像并推送到阿里云容器镜像服务（ACR）。
+#
+# 为什么不在服务器上构建：
+#   部署机是 2 vCPU / 2 GiB / 3 Mbps 固定带宽，本地 bun + Go 构建会 OOM，
+#   拉取基础镜像和依赖约 1 GB，按 375 KB/s 算需要 45 分钟以上。
+#   因此构建放在 GitHub Actions，服务器只负责 docker pull + 重启。
+#
+# 需要在仓库 Settings → Secrets and variables → Actions 配置：
+#   ACR_REGISTRY    ACR 公网域名（推送用），新旧个人版格式不同：
+#                     旧版：registry.cn-guangzhou.aliyuncs.com
+#                     新版：crpi-xxxxxxxx.cn-guangzhou.personal.cr.aliyuncs.com
+#   ACR_NAMESPACE   ACR 命名空间，例如 little-man
+#   ACR_USERNAME    ACR 访问凭证的用户名
+#   ACR_PASSWORD    ACR 访问凭证的固定密码
+#
+# 服务器侧使用 VPC 域名拉取（同地域走内网，不受 3 Mbps 公网带宽限制）：
+#   旧版：registry-vpc.cn-guangzhou.aliyuncs.com
+#   新版：crpi-xxxxxxxx-vpc.cn-guangzhou.personal.cr.aliyuncs.com
+name: Build and Push Image to ACR
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: acr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-push:
+    name: Build and push (linux/amd64)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 镜像 tag 用 commit 短 SHA，便于服务器按 tag 精确回滚
+      - name: Resolve version
+        id: meta
+        run: |
+          short_sha="$(git rev-parse --short HEAD)"
+          echo "short_sha=$short_sha" >> "$GITHUB_OUTPUT"
+          echo "version=${GITHUB_REF_NAME}-${short_sha}" >> "$GITHUB_OUTPUT"
+
+      # Dockerfile 用 $(cat VERSION) 注入 ldflags，仓库里该文件为空，
+      # 不写入的话 /api/status 的 version 字段会是空字符串
+      - name: Write VERSION
+        run: echo "${{ steps.meta.outputs.version }}" > VERSION
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ secrets.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/new-api:${{ steps.meta.outputs.short_sha }}
+            ${{ secrets.ACR_REGISTRY }}/${{ secrets.ACR_NAMESPACE }}/new-api:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.version=${{ steps.meta.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Write summary
+        run: |
+          {
+            echo "### 镜像已推送"
+            echo ""
+            echo "- 版本：\`${{ steps.meta.outputs.version }}\`"
+            echo "- 提交：\`${{ github.sha }}\`"
+            echo "- 标签：\`${{ steps.meta.outputs.short_sha }}\`、\`${{ github.ref_name }}\`"
+            echo ""
+            echo "服务器部署（在仓库目录执行）："
+            echo '```bash'
+            echo "ACR_REGISTRY=<VPC域名> ACR_NAMESPACE=<命名空间> ./scripts/deploy.sh --tag ${{ steps.meta.outputs.short_sha }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

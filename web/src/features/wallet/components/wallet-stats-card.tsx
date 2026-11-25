@@ -19,7 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 import { Activity, BarChart3, WalletCards } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatQuota } from '@/lib/format'
 
@@ -34,12 +33,12 @@ export function WalletStatsCard(props: WalletStatsCardProps) {
   const { t } = useTranslation()
   if (props.loading) {
     return (
-      <div className='grid grid-cols-3 divide-x rounded-lg border'>
+      <div className='grid grid-cols-1 gap-3.5 sm:grid-cols-3'>
         {['balance', 'usage', 'requests'].map((key) => (
-          <div key={key} className='min-w-0 px-2.5 py-2.5 sm:px-5 sm:py-4'>
-            <Skeleton className='h-3.5 w-full' />
-            <Skeleton className='mt-2 h-6 w-full sm:h-7' />
-            <Skeleton className='mt-1.5 hidden h-3.5 w-24 md:block' />
+          <div key={key} className='bg-card rounded-2xl border p-[18px]'>
+            <Skeleton className='size-[42px] rounded-xl' />
+            <Skeleton className='mt-3 h-3.5 w-full' />
+            <Skeleton className='mt-2 h-[26px] w-24' />
           </div>
         ))}
       </div>
@@ -51,49 +50,52 @@ export function WalletStatsCard(props: WalletStatsCardProps) {
     value: string
     description: string
     icon: typeof WalletCards
-    tone: IconBadgeTone
+    gradient: string
   }[] = [
     {
       label: t('Current Balance'),
       value: formatQuota(props.user?.quota ?? 0),
       description: t('Remaining quota'),
       icon: WalletCards,
-      tone: 'success',
+      gradient: 'linear-gradient(140deg,#2b78f5,#1553c4)',
     },
     {
       label: t('Total Usage'),
       value: formatQuota(props.user?.used_quota ?? 0),
       description: t('Total consumed quota'),
       icon: BarChart3,
-      tone: 'info',
+      gradient: 'linear-gradient(140deg,#059669,#047857)',
     },
     {
       label: t('API Requests'),
       value: (props.user?.request_count ?? 0).toLocaleString(),
       description: t('Total requests made'),
       icon: Activity,
-      tone: 'chart-4',
+      gradient: 'linear-gradient(140deg,#f97316,#ea580c)',
     },
   ]
 
   return (
-    <div className='grid grid-cols-3 divide-x rounded-lg border'>
+    <div className='grid grid-cols-1 gap-3.5 sm:grid-cols-3'>
       {stats.map((item) => (
-        <div key={item.label} className='min-w-0 px-2.5 py-2.5 sm:px-5 sm:py-4'>
-          <div className='flex items-center gap-1.5 sm:gap-2.5'>
-            <IconBadge tone={item.tone} size='stat'>
-              <item.icon />
-            </IconBadge>
-            <div className='text-muted-foreground truncate text-[11px] font-medium tracking-wider uppercase sm:text-xs'>
+        <div
+          key={item.label}
+          className='bg-card flex items-start gap-3.5 rounded-2xl border p-[18px] shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[0_18px_48px_rgba(15,23,42,0.10)]'
+        >
+          <span
+            className='tb-gradient-icon size-[42px] shrink-0 rounded-xl'
+            style={{ background: item.gradient }}
+          >
+            <item.icon className='size-5' strokeWidth={1.8} aria-hidden='true' />
+          </span>
+          <div className='min-w-0 flex-1'>
+            <div className='text-muted-foreground truncate text-[13px] font-medium'>
               {item.label}
             </div>
-          </div>
-
-          <div className='text-foreground mt-1.5 font-mono text-sm font-bold tracking-tight break-all tabular-nums sm:mt-2.5 sm:text-2xl'>
-            {item.value}
-          </div>
-          <div className='text-muted-foreground/60 mt-1 hidden text-xs md:block'>
-            {item.description}
+            <div className='tb-stat-num break-all'>{item.value}</div>
+            <div className='text-muted-foreground mt-0.5 truncate text-[12.5px]'>
+              {item.description}
+            </div>
           </div>
         </div>
       ))}

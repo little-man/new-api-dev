@@ -107,19 +107,24 @@ async function renderOverview() {
 }
 
 describe('overview setup guide', () => {
-  it('shows usage first and only a header entry when setup is complete', async () => {
+  it('shows the credit card first and hides the setup steps when setup is complete', async () => {
     await renderOverview()
 
     const toggle = await screen.findByRole('button', { name: 'Setup guide' })
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
     expect(
       screen.getAllByRole('heading').map((heading) => heading.textContent)
-    ).toEqual(['Overview', 'Usage at a glance'])
+    ).toEqual(['Overview', 'Credit remaining'])
     expect(screen.queryByText('Setup guide complete')).not.toBeInTheDocument()
     expect(screen.queryByText('Setup progress: 3/3')).not.toBeInTheDocument()
-    for (const name of ['API Keys', 'Channels', 'Usage Logs', 'Pricing']) {
+    for (const name of ['API Keys', 'Channels', 'Pricing']) {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument()
     }
+    // Reviewing logs stays available as a durable header action once setup ends.
+    expect(screen.getByRole('button', { name: 'Usage Logs' })).toHaveAttribute(
+      'href',
+      '/usage-logs'
+    )
     const panel = document.getElementById(
       toggle.getAttribute('aria-controls') ?? ''
     )

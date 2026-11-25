@@ -644,6 +644,24 @@ export function OverviewDashboard() {
             {t('Setup guide')}
           </Button>
         )}
+        <Button
+          variant='outline'
+          size='lg'
+          className='rounded-[10px]'
+          render={<Link to='/usage-logs' />}
+        >
+          <FileText data-icon='inline-start' />
+          {t('Usage Logs')}
+        </Button>
+        <Button
+          variant='ghost'
+          size='lg'
+          className='tb-gradient-btn rounded-[10px] font-semibold hover:bg-transparent hover:text-white'
+          render={<Link to='/keys' />}
+        >
+          <KeyRound data-icon='inline-start' />
+          {t('Create API Key')}
+        </Button>
       </SectionPageLayout.Actions>
       <SectionPageLayout.Content>
         <div className='flex flex-col gap-4'>

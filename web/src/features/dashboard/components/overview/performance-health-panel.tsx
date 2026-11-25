@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
 import { Gauge, HeartPulse, Timer } from 'lucide-react'
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
@@ -60,16 +60,77 @@ export function PerformanceHealthPanel() {
   const loading = metricsQuery.isLoading
   const hasData = models.length > 0
 
+  let bodyContent: ReactNode
+  if (loading) {
+    bodyContent = (
+      <div className='space-y-1'>
+        {['success', 'latency', 'throughput'].map((key) => (
+          <Skeleton key={key} className='h-5 w-full rounded' />
+        ))}
+      </div>
+    )
+  } else if (hasData) {
+    bodyContent = (
+      <div>
+        <span className='text-muted-foreground mb-1 block text-[11px] font-medium'>
+          {t('Top models by traffic')}
+        </span>
+        <div className='grid grid-cols-1 gap-x-4 sm:grid-cols-2'>
+          {topModels.map((model) => (
+            <div
+              key={model.model_name}
+              className='flex items-center justify-between gap-2 rounded px-1.5 py-1'
+            >
+              <span className='min-w-0 flex-1 truncate font-mono text-[11px]'>
+                {model.model_name}
+              </span>
+              <span className='inline-flex shrink-0 items-center gap-1'>
+                <span
+                  className={cn(
+                    'size-1.5 rounded-full',
+                    getSuccessRateDotClass(model.success_rate)
+                  )}
+                  aria-hidden='true'
+                />
+                <span
+                  className={cn(
+                    'font-mono text-[11px] font-semibold tabular-nums',
+                    getSuccessRateTextClass(model.success_rate)
+                  )}
+                >
+                  {formatUptimePct(model.success_rate)}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  } else {
+    bodyContent = (
+      <div className='text-muted-foreground flex flex-col items-center rounded-xl border border-dashed border-[#d8e0ec] bg-[#fbfcfe] px-4 py-[26px] text-center text-[13px] dark:border-slate-700 dark:bg-slate-900/40'>
+        <HeartPulse
+          className='mb-2 size-7 text-[#c3cedd] dark:text-slate-600'
+          strokeWidth={1.5}
+          aria-hidden='true'
+        />
+        {t(
+          'No performance data yet. Success rate, latency and throughput appear here after your first calls.'
+        )}
+      </div>
+    )
+  }
+
   return (
     <section className='bg-card h-full overflow-hidden rounded-2xl border shadow-xs'>
-      <div className='flex items-center gap-2 border-b px-4 py-3 sm:px-5'>
-        <IconBadge tone='success' size='sm'>
-          <HeartPulse />
-        </IconBadge>
-        <h3 className='text-sm font-semibold'>{t('Performance health')}</h3>
-        <span className='text-muted-foreground ml-auto text-xs'>
+      <div className='flex flex-wrap items-center gap-2.5 px-[18px] pt-4 pb-3'>
+        <h3 className='text-[15px] font-bold'>{t('Performance health')}</h3>
+        <span className='text-muted-foreground text-[13px]'>
           {t('Performance metrics for the last 24 hours')}
         </span>
+        <IconBadge tone='success' size='sm' className='ml-auto'>
+          <HeartPulse />
+        </IconBadge>
       </div>
 
       <div className='space-y-3 p-4 sm:p-5'>
@@ -100,50 +161,7 @@ export function PerformanceHealthPanel() {
           />
         </div>
 
-        {loading ? (
-          <div className='space-y-1'>
-            {['success', 'latency', 'throughput'].map((key) => (
-              <Skeleton key={key} className='h-5 w-full rounded' />
-            ))}
-          </div>
-        ) : (
-          hasData && (
-            <div>
-              <span className='text-muted-foreground mb-1 block text-[11px] font-medium'>
-                {t('Top models by traffic')}
-              </span>
-              <div className='grid grid-cols-1 gap-x-4 sm:grid-cols-2'>
-                {topModels.map((model) => (
-                  <div
-                    key={model.model_name}
-                    className='flex items-center justify-between gap-2 rounded px-1.5 py-1'
-                  >
-                    <span className='min-w-0 flex-1 truncate font-mono text-[11px]'>
-                      {model.model_name}
-                    </span>
-                    <span className='inline-flex shrink-0 items-center gap-1'>
-                      <span
-                        className={cn(
-                          'size-1.5 rounded-full',
-                          getSuccessRateDotClass(model.success_rate)
-                        )}
-                        aria-hidden='true'
-                      />
-                      <span
-                        className={cn(
-                          'font-mono text-[11px] font-semibold tabular-nums',
-                          getSuccessRateTextClass(model.success_rate)
-                        )}
-                      >
-                        {formatUptimePct(model.success_rate)}
-                      </span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )
-        )}
+        {bodyContent}
       </div>
     </section>
   )

@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { LucideIcon } from 'lucide-react'
-import { useId, type ReactNode } from 'react'
+import { useId, type CSSProperties, type ReactNode } from 'react'
 
 import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -52,6 +52,10 @@ interface StatCardProps {
   action?: ReactNode
   iconTone?: IconBadgeTone
   compactMobile?: boolean
+  /** TokenBerth kcard layout: gradient icon block, 26px gradient number, sparkline below. */
+  emphasis?: boolean
+  /** Overrides the gradient of the icon block in the emphasis layout. */
+  iconStyle?: CSSProperties
 }
 
 const TONE_CLASSES: Record<StatCardTone, string> = {
@@ -295,6 +299,37 @@ export function StatCard(props: StatCardProps) {
     visualization = <LineSparkline values={props.sparkline} tone={tone} />
   } else {
     visualization = <BarSparkline values={props.sparkline} tone={tone} />
+  }
+
+  if (props.emphasis) {
+    return (
+      <div className='bg-card group relative flex flex-col overflow-hidden rounded-2xl border p-[18px] shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[0_18px_48px_rgba(15,23,42,0.10)]'>
+        <div className='flex items-center gap-3.5'>
+          <span
+            className='tb-gradient-icon size-[42px] shrink-0 rounded-xl'
+            style={props.iconStyle}
+          >
+            <Icon className='size-5' strokeWidth={1.8} aria-hidden='true' />
+          </span>
+          <div className='min-w-0 flex-1'>
+            <div className='text-muted-foreground truncate text-[13px] font-medium'>
+              {props.title}
+            </div>
+            {props.loading ? (
+              <Skeleton className='mt-0.5 h-[26px] w-24' />
+            ) : (
+              <div className='tb-stat-num break-all'>{props.value}</div>
+            )}
+          </div>
+        </div>
+        {!props.loading && (
+          <p className='text-muted-foreground mt-2 truncate text-[12.5px]'>
+            {props.description}
+          </p>
+        )}
+        <div className='mt-3'>{visualization}</div>
+      </div>
+    )
   }
 
   return (

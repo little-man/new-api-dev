@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Playground } from '@/features/playground'
 import { useAuthStore } from '@/stores/auth-store'
+import { useSignInDialogStore } from '@/stores/sign-in-dialog-store'
 
 import { ShowcaseShell } from '../components/showcase-shell'
 
@@ -33,6 +34,7 @@ interface ShowcaseTrialProps {
 export function ShowcaseTrial(props: ShowcaseTrialProps) {
   const { t } = useTranslation()
   const isAuthenticated = !!useAuthStore((state) => state.auth.user)
+  const openSignIn = useSignInDialogStore((state) => state.openSignIn)
   const signInRedirect = props.initialModel
     ? `/trial?model=${encodeURIComponent(props.initialModel)}`
     : '/trial'
@@ -84,9 +86,7 @@ export function ShowcaseTrial(props: ShowcaseTrialProps) {
             <Button
               className='mt-6'
               size='lg'
-              render={
-                <Link to='/sign-in' search={{ redirect: signInRedirect }} />
-              }
+              onClick={() => openSignIn(signInRedirect)}
             >
               {t('Sign in to continue')}
             </Button>

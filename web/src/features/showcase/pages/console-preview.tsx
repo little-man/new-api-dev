@@ -21,6 +21,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/utils'
+import { useSignInDialogStore } from '@/stores/sign-in-dialog-store'
 
 import { ShowcaseShell } from '../components/showcase-shell'
 import { StatusBadge } from '../components/showcase-status-badge'
@@ -519,6 +520,7 @@ export function ShowcaseConsole({ initialTab }: { initialTab?: ConsoleTab }) {
   const { t } = useTranslation()
   const [tab, setTab] = useState<ConsoleTab>(initialTab ?? 'overview')
   const { isAuthenticated } = useConsoleData()
+  const openSignIn = useSignInDialogStore((state) => state.openSignIn)
 
   const tabs: Array<{ key: ConsoleTab; label: string }> = [
     { key: 'overview', label: t('Overview') },
@@ -556,13 +558,13 @@ export function ShowcaseConsole({ initialTab }: { initialTab?: ConsoleTab }) {
                 'These tables are illustrative. Sign in to switch every panel to your own account data.'
               )}
             </p>
-            <Link
-              to='/sign-in'
-              search={{ redirect: '/console-preview' }}
+            <button
+              type='button'
+              onClick={() => openSignIn('/console-preview')}
               className='inline-flex h-8 items-center rounded-lg bg-blue-600 px-3 text-xs font-semibold whitespace-nowrap text-white hover:bg-blue-700'
             >
               {t('Sign in / Sign up')}
-            </Link>
+            </button>
           </div>
         )}
 
@@ -590,15 +592,22 @@ export function ShowcaseConsole({ initialTab }: { initialTab?: ConsoleTab }) {
               </button>
             ))}
           </div>
-          <Link
-            to={isAuthenticated ? '/dashboard' : '/sign-in'}
-            search={
-              isAuthenticated ? undefined : { redirect: '/console-preview' }
-            }
-            className='ml-auto inline-flex h-9 items-center rounded-lg border border-slate-300 px-3 text-[12.5px] font-semibold text-slate-700 hover:border-blue-400 dark:border-slate-700 dark:text-slate-200'
-          >
-            {isAuthenticated ? t('Open real console') : t('Sign in')}
-          </Link>
+          {isAuthenticated ? (
+            <Link
+              to='/dashboard'
+              className='ml-auto inline-flex h-9 items-center rounded-lg border border-slate-300 px-3 text-[12.5px] font-semibold text-slate-700 hover:border-blue-400 dark:border-slate-700 dark:text-slate-200'
+            >
+              {t('Open real console')}
+            </Link>
+          ) : (
+            <button
+              type='button'
+              onClick={() => openSignIn('/console-preview')}
+              className='ml-auto inline-flex h-9 items-center rounded-lg border border-slate-300 px-3 text-[12.5px] font-semibold text-slate-700 hover:border-blue-400 dark:border-slate-700 dark:text-slate-200'
+            >
+              {t('Sign in')}
+            </button>
+          )}
         </div>
 
         <div className='mt-4'>

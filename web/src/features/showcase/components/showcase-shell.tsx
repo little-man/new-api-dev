@@ -24,6 +24,7 @@ import type { TopNavLink } from '@/components/layout/types'
 import { useStatus } from '@/hooks/use-status'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
+import { useSignInDialogStore } from '@/stores/sign-in-dialog-store'
 
 import { SHOWCASE_NAV_LINKS, SHOWCASE_ROUTES } from '../lib/showcase-nav'
 import { ShowcaseBrandMark, SHOWCASE_BRAND_NAME } from './showcase-brand'
@@ -46,20 +47,17 @@ export function ShowcaseShell({ children, className }: ShowcaseShellProps) {
   const { t } = useTranslation()
   const { status } = useStatus()
   const isAuthenticated = !!useAuthStore((state) => state.auth.user)
+  const openSignIn = useSignInDialogStore((state) => state.openSignIn)
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
 
   const docsLink = status?.docs_link as string | undefined
-  // The console entry leads to the real dashboard when signed in, and to the
-  // sign-in page (with a redirect back to the dashboard) when not. Every other
-  // entry stays a plain public route.
-  const consoleHref = isAuthenticated
-    ? '/dashboard'
-    : `/sign-in?redirect=${encodeURIComponent('/dashboard')}`
+  // The console entry leads to the real dashboard when signed in, and asks a
+  // guest to sign in through the in-page dialog when not.
   const baseLinks: TopNavLink[] = SHOWCASE_NAV_LINKS.map((link) =>
     link.href === SHOWCASE_ROUTES.console
-      ? { ...link, href: consoleHref }
+      ? { ...link, href: '/dashboard', requiresAuth: !isAuthenticated }
       : link
   )
   // The docs entry only exists when the operator published a documentation
@@ -97,17 +95,32 @@ export function ShowcaseShell({ children, className }: ShowcaseShellProps) {
                   ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'
                   : 'text-slate-600 dark:text-slate-300'
               )
-              return link.external ? (
-                <a
-                  key={`${link.title}:${link.href}`}
-                  href={link.href}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className={itemClass}
-                >
-                  {t(link.title)}
-                </a>
-              ) : (
+              if (link.external) {
+                return (
+                  <a
+                    key={`${link.title}:${link.href}`}
+                    href={link.href}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className={itemClass}
+                  >
+                    {t(link.title)}
+                  </a>
+                )
+              }
+              if (link.requiresAuth) {
+                return (
+                  <button
+                    key={`${link.title}:${link.href}`}
+                    type='button'
+                    onClick={() => openSignIn(link.href)}
+                    className={itemClass}
+                  >
+                    {t(link.title)}
+                  </button>
+                )
+              }
+              return (
                 <Link
                   key={`${link.title}:${link.href}`}
                   to={link.href}

@@ -29,6 +29,7 @@ import { fetchTokenKey, getApiKeys } from '@/features/keys/api'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
+import { useSignInDialogStore } from '@/stores/sign-in-dialog-store'
 
 import type { ShowcaseModel } from '../hooks/use-showcase-models'
 import {
@@ -216,6 +217,7 @@ export function QuickstartDialog({
 }) {
   const { t } = useTranslation()
   const isAuthenticated = !!useAuthStore((state) => state.auth.user)
+  const openSignIn = useSignInDialogStore((state) => state.openSignIn)
   const [lang, setLang] = useState<SnippetLang>('curl')
   const [targetKind, setTargetKind] = useState<SnippetKind>('chat')
   const { copiedText, copyToClipboard } = useCopyToClipboard({
@@ -264,13 +266,16 @@ export function QuickstartDialog({
               {t('Manage keys')}
             </Link>
           ) : (
-            <Link
-              to='/sign-in'
-              search={{ redirect: SHOWCASE_ROUTES.market }}
+            <button
+              type='button'
+              onClick={() => {
+                onOpenChange(false)
+                openSignIn(SHOWCASE_ROUTES.market)
+              }}
               className={PRIMARY_BUTTON}
             >
               {t('Sign in to get a key')}
-            </Link>
+            </button>
           )}
         </div>
       }

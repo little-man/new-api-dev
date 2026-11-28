@@ -22,6 +22,7 @@ import { useAuthStore } from '@/stores/auth-store'
 
 import { STORAGE_KEYS } from '../../../constants'
 import type { Message } from '../../../types'
+import { getInitialPlaygroundConfig } from '../../state/playground-state-utils'
 import {
   clearPlaygroundData,
   loadConfig,
@@ -76,6 +77,20 @@ test('switching accounts isolates config, messages and parameter toggles and pre
   expect(loadConfig()).toEqual({ model: 'account-b-model' })
   expect(loadMessages()).toEqual([])
   expect(loadParameterEnabled()).toEqual({ temperature: false })
+})
+
+test('an explicit initial model overrides the saved model for marketplace deep links', () => {
+  useAuthStore.getState().auth.setUser({ id: 1, username: 'A', role: 1 })
+  saveConfig({ model: 'saved-model', stream: false })
+
+  expect(getInitialPlaygroundConfig('marketplace-model')).toMatchObject({
+    model: 'marketplace-model',
+    stream: false,
+  })
+  expect(getInitialPlaygroundConfig()).toMatchObject({
+    model: 'saved-model',
+    stream: false,
+  })
 })
 
 test('legacy global data is removed instead of assigned to the first signed-in account', () => {

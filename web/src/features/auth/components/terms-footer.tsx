@@ -23,10 +23,18 @@ import { cn } from '@/lib/utils'
 import type { SystemStatus } from '../types'
 
 interface TermsFooterProps {
-  variant?: 'sign-in' | 'sign-up'
+  /**
+   * `links` renders the two documents as standalone navigation entries, for
+   * surfaces such as the sign-in dialog. Unlike the consent sentences it does
+   * not depend on the operator having published the documents yet.
+   */
+  variant?: 'sign-in' | 'sign-up' | 'links'
   className?: string
   status?: SystemStatus | null
 }
+
+const LEGAL_LINK_CLASS_NAME =
+  'text-muted-foreground hover:text-primary underline underline-offset-4'
 
 export function TermsFooter({
   variant = 'sign-in',
@@ -34,6 +42,47 @@ export function TermsFooter({
   status,
 }: TermsFooterProps) {
   const { t } = useTranslation()
+
+  const agreementLink = {
+    label: 'User Agreement',
+    href: '/user-agreement',
+  }
+  const privacyLink = {
+    label: 'Privacy Policy',
+    href: '/privacy-policy',
+  }
+
+  if (variant === 'links') {
+    return (
+      <p
+        className={cn(
+          'flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-xs',
+          className
+        )}
+      >
+        <a
+          href={agreementLink.href}
+          target='_blank'
+          rel='noopener noreferrer'
+          className={LEGAL_LINK_CLASS_NAME}
+        >
+          {t(agreementLink.label)}
+        </a>
+        <span aria-hidden='true' className='text-muted-foreground/60'>
+          ·
+        </span>
+        <a
+          href={privacyLink.href}
+          target='_blank'
+          rel='noopener noreferrer'
+          className={LEGAL_LINK_CLASS_NAME}
+        >
+          {t(privacyLink.label)}
+        </a>
+      </p>
+    )
+  }
+
   const text =
     variant === 'sign-in'
       ? 'By clicking sign in, you agree to our'
@@ -46,24 +95,10 @@ export function TermsFooter({
     return null
   }
 
-  const agreementLink = {
-    label: 'User Agreement',
-    href: '/user-agreement',
-  }
-  const privacyLink = {
-    label: 'Privacy Policy',
-    href: '/privacy-policy',
-  }
-
-  const activeLinks =
-    hasUserAgreement || hasPrivacyPolicy
-      ? ([
-          hasUserAgreement ? agreementLink : null,
-          hasPrivacyPolicy ? privacyLink : null,
-        ].filter(Boolean) as Array<{ label: string; href: string }>)
-      : [agreementLink, privacyLink]
-
-  const [firstLink, secondLink] = activeLinks
+  const [firstLink, secondLink] = [
+    hasUserAgreement ? agreementLink : null,
+    hasPrivacyPolicy ? privacyLink : null,
+  ].filter(Boolean) as Array<{ label: string; href: string }>
 
   return (
     <p className={cn('text-muted-foreground text-center text-xs', className)}>

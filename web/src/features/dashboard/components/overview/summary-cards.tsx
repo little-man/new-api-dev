@@ -119,20 +119,14 @@ function getHealthLevel(remainQuota: number, recentUsage: number): HealthLevel {
   return 'healthy'
 }
 
-const HEALTH_CONFIG: Record<
-  HealthLevel,
-  { dotClass: string; labelKey: string }
-> = {
+const HEALTH_CONFIG: Record<HealthLevel, { labelKey: string }> = {
   healthy: {
-    dotClass: 'bg-success',
     labelKey: 'Healthy',
   },
   caution: {
-    dotClass: 'bg-warning',
     labelKey: 'Low balance',
   },
   critical: {
-    dotClass: 'bg-destructive',
     labelKey: 'Balance depleted',
   },
 }
@@ -229,130 +223,119 @@ export function SummaryCards() {
     runwayDisplay = t('No recent usage')
   }
 
+  const iconGradients = [
+    'linear-gradient(140deg,#2b78f5,#1553c4)',
+    'linear-gradient(140deg,#059669,#047857)',
+    'linear-gradient(140deg,#f97316,#ea580c)',
+  ]
   const items = useSummaryCardsConfig({
     ...summaryValues,
     todayUsageDisplay,
     currencyEnabled,
     currencyLabel,
-  }).map((config, index) => {
-    const tones = ['accent-1', 'accent-2', 'accent-3'] as const
+  }).map((config, index) => ({
+    key: config.key,
+    title: config.title,
+    value: config.value,
+    desc: config.description,
+    icon: config.icon,
+    iconStyle: { background: iconGradients[index] ?? iconGradients[0] },
+    sparkline:
+      config.key === 'todayUsage'
+        ? sparklineData.usage
+        : getSummarySparkline(config.key, sparklineData),
+  }))
 
-    return {
-      key: config.key,
-      title: config.title,
-      value: config.value,
-      desc: config.description,
-      icon: config.icon,
-      tone: tones[index] ?? 'accent-3',
-      sparkline:
-        config.key === 'todayUsage'
-          ? sparklineData.usage
-          : getSummarySparkline(config.key, sparklineData),
-      sparklineVariant: 'line' as const,
-    }
-  })
+  let quotaToneClass = ''
+  let quotaDotClass = ''
+  if (healthLevel === 'critical') {
+    quotaToneClass =
+      'border-destructive/30 bg-destructive/10 text-destructive'
+    quotaDotClass = 'bg-destructive'
+  } else if (healthLevel === 'caution') {
+    quotaToneClass =
+      'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300'
+    quotaDotClass = 'bg-warning'
+  }
 
   return (
-    <div className='bg-card overflow-hidden rounded-2xl border shadow-xs'>
-      <div className='grid xl:grid-cols-[minmax(0,1fr)_19rem]'>
-        <div className='flex flex-col gap-2.5 p-3 sm:gap-3 sm:p-5'>
-          <div className='flex flex-wrap items-start justify-between gap-3'>
-            <div className='flex flex-col gap-1'>
-              <h3 className='text-sm font-semibold sm:text-base'>
-                {t('Usage at a glance')}
-              </h3>
-              <p className='text-muted-foreground text-xs sm:text-sm'>
-                {t('Monitor balance, usage, and request volume')}
-              </p>
-            </div>
-          </div>
-          <StaggerContainer className='grid grid-cols-3 gap-1.5 sm:gap-3'>
-            {items.map((it) => (
-              <StaggerItem
-                key={it.key}
-                className='bg-background/60 rounded-lg border px-2 py-1.5 sm:rounded-xl sm:p-3'
-              >
-                <StatCard
-                  title={it.title}
-                  value={it.value}
-                  description={it.desc}
-                  icon={it.icon}
-                  tone={it.tone}
-                  sparkline={it.sparkline}
-                  sparklineVariant={it.sparklineVariant}
-                  loading={loading}
-                  compactMobile
-                />
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
+    <>
+      <StaggerContainer className='grid grid-cols-1 gap-3.5 sm:grid-cols-3'>
+        {items.map((it) => (
+          <StaggerItem key={it.key}>
+            <StatCard
+              title={it.title}
+              value={it.value}
+              description={it.desc}
+              icon={it.icon}
+              iconStyle={it.iconStyle}
+              sparkline={it.sparkline}
+              sparklineVariant='line'
+              loading={loading}
+              emphasis
+            />
+          </StaggerItem>
+        ))}
+      </StaggerContainer>
+
+      <div className='bg-card mt-4 mb-4 rounded-2xl border shadow-[0_10px_30px_rgba(15,23,42,0.06)]'>
+        <div className='flex items-center gap-2.5 px-[18px] pt-4 pb-3'>
+          <h3 className='text-[15px] font-bold'>{t('Credit remaining')}</h3>
+          <span className='text-muted-foreground hidden text-[13px] sm:inline'>
+            {t('Available balance on this account')}
+          </span>
+          <span className={cn('tb-pill ml-auto', quotaToneClass)}>
+            <span
+              className={cn('tb-pill-dot', quotaDotClass)}
+              aria-hidden='true'
+            />
+            {t(healthCfg.labelKey)}
+          </span>
         </div>
-
-        <div className='flex flex-col justify-between gap-3 border-t bg-[linear-gradient(135deg,color-mix(in_oklch,var(--overview-accent-2)_12%,var(--background))_0%,color-mix(in_oklch,oklch(0.82_0.04_155)_8%,var(--background))_48%,color-mix(in_oklch,var(--overview-accent-1)_7%,var(--background))_100%)] p-3 sm:gap-4 sm:p-5 xl:border-t-0 xl:border-l'>
-          <div className='flex flex-col gap-2 sm:gap-3'>
-            <div className='flex items-center justify-between'>
-              <span className='text-muted-foreground text-xs font-medium'>
-                {t('Credit remaining')}
-              </span>
-              <span className='flex items-center gap-1.5'>
-                <span
-                  className={cn('size-1.5 rounded-full', healthCfg.dotClass)}
-                  aria-hidden='true'
-                />
-                <span className='text-muted-foreground text-[11px] font-medium'>
-                  {t(healthCfg.labelKey)}
-                </span>
-              </span>
-            </div>
-
-            <div className='font-mono text-xl font-semibold tracking-tight sm:text-2xl'>
-              {formatQuota(remainQuota)}
-            </div>
-
-            <div className='grid grid-cols-2 gap-2'>
-              <div className='bg-background/60 rounded-lg px-2.5 py-2'>
-                <div className='text-muted-foreground flex items-center gap-1 text-[11px] leading-none font-medium'>
-                  <Flame className='size-3 shrink-0' aria-hidden='true' />
-                  <span className='truncate'>{t('Last 24h usage')}</span>
-                </div>
-                <div className='text-foreground mt-1.5 truncate text-xs font-semibold tabular-nums'>
-                  {formatQuota(recentUsage)}
-                </div>
-              </div>
-              <div className='bg-background/60 rounded-lg px-2.5 py-2'>
-                <div className='text-muted-foreground flex items-center gap-1 text-[11px] leading-none font-medium'>
-                  {runwayDays !== null && runwayDays < 3 ? (
-                    <TrendingDown
-                      className='size-3 shrink-0'
-                      aria-hidden='true'
-                    />
-                  ) : (
-                    <ShieldCheck
-                      className='size-3 shrink-0'
-                      aria-hidden='true'
-                    />
-                  )}
-                  <span className='truncate'>{t('Runway')}</span>
-                </div>
-                <div
-                  className={cn(
-                    'mt-1.5 truncate text-xs font-semibold tabular-nums',
-                    healthLevel === 'critical' && 'text-destructive',
-                    healthLevel === 'caution' && 'text-warning'
-                  )}
-                >
-                  {runwayDisplay}
-                </div>
-              </div>
-            </div>
+        <div className='flex flex-wrap items-center gap-4 px-[18px] pt-1 pb-[18px]'>
+          <div className='tb-gradient-text text-[34px] leading-none font-extrabold tracking-[-0.02em] tabular-nums'>
+            {formatQuota(remainQuota)}
           </div>
-
-          <Button className='justify-between' render={<Link to='/wallet' />}>
-            <span>{t('Wallet')}</span>
-            <ArrowRight data-icon='inline-end' />
-          </Button>
+          <div className='ml-auto flex flex-wrap items-center gap-x-6 gap-y-3'>
+            <div>
+              <div className='flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400'>
+                <Flame className='size-3 shrink-0' aria-hidden='true' />
+                <span>{t('Last 24h usage')}</span>
+              </div>
+              <b className='mt-0.5 block text-base font-bold tabular-nums'>
+                {formatQuota(recentUsage)}
+              </b>
+            </div>
+            <div>
+              <div className='flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400'>
+                {runwayDays !== null && runwayDays < 3 ? (
+                  <TrendingDown className='size-3 shrink-0' aria-hidden='true' />
+                ) : (
+                  <ShieldCheck className='size-3 shrink-0' aria-hidden='true' />
+                )}
+                <span>{t('Runway')}</span>
+              </div>
+              <b
+                className={cn(
+                  'mt-0.5 block text-base font-bold tabular-nums',
+                  healthLevel === 'critical' && 'text-destructive',
+                  healthLevel === 'caution' && 'text-warning'
+                )}
+              >
+                {runwayDisplay}
+              </b>
+            </div>
+            <Button
+              variant='outline'
+              className='gap-1 rounded-[10px]'
+              render={<Link to='/wallet' />}
+            >
+              <span>{t('Wallet')}</span>
+              <ArrowRight data-icon='inline-end' />
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

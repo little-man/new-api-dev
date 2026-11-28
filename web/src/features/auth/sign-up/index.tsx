@@ -16,18 +16,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { useStatus } from '@/hooks/use-status'
+import { useSignInDialogStore } from '@/stores/sign-in-dialog-store'
 
 import { AuthLayout } from '../auth-layout'
+import { SignInDialog } from '../components/sign-in-dialog'
 import { TermsFooter } from '../components/terms-footer'
 import { SignUpForm } from './components/sign-up-form'
 
 export function SignUp() {
   const { t } = useTranslation()
   const { status } = useStatus()
+  const openSignIn = useSignInDialogStore((state) => state.openSignIn)
 
   return (
     <AuthLayout>
@@ -38,12 +40,13 @@ export function SignUp() {
           </h2>
           <p className='text-muted-foreground text-left text-sm sm:text-base'>
             {t('Already have an account?')}{' '}
-            <Link
-              to='/sign-in'
+            <button
+              type='button'
+              onClick={() => openSignIn()}
               className='hover:text-primary font-medium underline underline-offset-4'
             >
               {t('Sign in')}
-            </Link>
+            </button>
             .
           </p>
         </div>
@@ -56,6 +59,8 @@ export function SignUp() {
           className='text-center'
         />
       </div>
+
+      <SignInDialog />
     </AuthLayout>
   )
 }

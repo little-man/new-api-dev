@@ -162,6 +162,10 @@ export function SidebarModulesSection({
         title: t('Subscription Management'),
         description: t('Manage subscription plans and pricing.'),
       },
+      lead: {
+        title: t('Enterprise leads'),
+        description: t('Review requests submitted from the storefront.'),
+      },
     },
   }
   const formDefaults = useMemo(() => config, [config])

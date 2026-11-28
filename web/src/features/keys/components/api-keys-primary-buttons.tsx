@@ -63,7 +63,7 @@ export function ApiKeysPrimaryButtons() {
   return (
     <div className='flex flex-wrap gap-2'>
       <Popover>
-        <PopoverTrigger render={<Button variant='outline' size='sm' />}>
+        <PopoverTrigger render={<Button variant='outline' size='lg' className='rounded-[10px]' />}>
           <Globe aria-hidden='true' />
           {t('API Addresses')}
           <ChevronDown aria-hidden='true' />
@@ -112,7 +112,12 @@ export function ApiKeysPrimaryButtons() {
           )}
         </PopoverContent>
       </Popover>
-      <Button size='sm' onClick={() => setOpen('create')}>
+      <Button
+        variant='ghost'
+        size='lg'
+        className='tb-gradient-btn rounded-[10px] font-semibold hover:bg-transparent hover:text-white'
+        onClick={() => setOpen('create')}
+      >
         <Plus className='h-4 w-4' />
         {t('Create API Key')}
       </Button>

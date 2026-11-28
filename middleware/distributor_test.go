@@ -404,12 +404,22 @@ func TestDistributeHidesTaskPluginDetailsButLogsDiagnostics(t *testing.T) {
 
 func TestNoAvailableChannelMessageWithoutPlugin(t *testing.T) {
 	require.NoError(t, i18n.Init())
-	plain, _ := gin.CreateTestContext(nil)
-	plain.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
-	plain.Request.Header.Set("Accept-Language", "en")
-	generic := noAvailableChannelMessage(plain, "default", "gpt-4o")
-	assert.NotContains(t, generic, "task plugin")
-	assert.Contains(t, generic, "gpt-4o")
+	for _, locale := range []struct {
+		language string
+		marker   string
+	}{
+		{"en", "auto-disabled"},
+		{"zh-CN", "自动禁用"},
+		{"zh-TW", "自動停用"},
+	} {
+		plain, _ := gin.CreateTestContext(nil)
+		plain.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
+		plain.Request.Header.Set("Accept-Language", locale.language)
+		generic := noAvailableChannelMessage(plain, "default", "gpt-4o")
+		assert.NotContains(t, generic, "task plugin")
+		assert.Contains(t, generic, "gpt-4o")
+		assert.Contains(t, generic, locale.marker)
+	}
 }
 
 func TestSharedEndpointRebindsToSelectedType61Plugin(t *testing.T) {

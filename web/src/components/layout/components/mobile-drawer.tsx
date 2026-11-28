@@ -29,6 +29,7 @@ import useDialogState from '@/hooks/use-dialog'
 import { useIsSidebarModuleVisible } from '@/hooks/use-sidebar-config'
 import { useUserDisplay } from '@/hooks/use-user-display'
 import type { AuthUser } from '@/stores/auth-store'
+import { useSignInDialogStore } from '@/stores/sign-in-dialog-store'
 
 import { MOBILE_DRAWER_ANIMATION, MOBILE_DRAWER_CONFIG } from '../constants'
 import type { TopNavLink } from '../types'
@@ -169,12 +170,16 @@ interface MobileSignInButtonProps {
 
 function MobileSignInButton({ onNavigate }: MobileSignInButtonProps) {
   const { t } = useTranslation()
+  const openSignIn = useSignInDialogStore((state) => state.openSignIn)
   return (
     <Button
       variant='secondary'
       size='sm'
       className='h-10 w-full'
-      render={<Link to='/sign-in' onClick={onNavigate} />}
+      onClick={() => {
+        onNavigate?.()
+        openSignIn('/dashboard')
+      }}
     >
       {t('Sign in')}
     </Button>
